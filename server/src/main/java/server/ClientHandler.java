@@ -82,11 +82,10 @@ public class ClientHandler {
                             if (str.startsWith("/cnick")) {
                                 String[] token = str.split(" ");
                                 if (token.length == 2) {
-                                    if (new DataBase().changeNickname(nick, token[1])) {
+                                    if (DataBaseQuery.changeNickname(nick, token[1])) {
                                         sendMessage("Никнейм " + nick + " успешно изменен на " + token[1]);
                                         nick = token[1];
-                                        server.unsubscribe(this);
-                                        server.subscribe(this);
+                                        server.broadcastClientList();
                                         out.writeUTF(str);
                                     } else {
                                         sendMessage("Никнейм " + token[1] + " занят");
