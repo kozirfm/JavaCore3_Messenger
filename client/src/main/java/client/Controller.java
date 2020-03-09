@@ -18,14 +18,12 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
-
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class Controller implements Initializable {
@@ -104,6 +102,7 @@ public class Controller implements Initializable {
                         if (str.startsWith("/authok ")) {
                             setAuthenticated(true);
                             nickname = str.split(" ")[1];
+                            loadMessageHistory();
                             break;
                         }
                         textArea.appendText(str + "\n");
@@ -134,6 +133,7 @@ public class Controller implements Initializable {
                             }
                         } else {
                             textArea.appendText(str + "\n");
+                            addMessageToFile(str);
                         }
                     }
                 } catch (SocketException e) {
@@ -233,6 +233,42 @@ public class Controller implements Initializable {
         }
         try {
             out.writeUTF(msg);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void loadMessageHistory() throws IOException {
+        File file = new File(String.format("client/src/main/resources/history_%s.txt", nickname));
+        List<String> list = new ArrayList<>();
+        if (!file.exists()) {
+            FileWriter fileWriter = new FileWriter(file);
+            fileWriter.close();
+        } else {
+            try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    list.add(line);
+                }
+                if (list.size() >= 100) {
+                    for (int i = list.size() - 100; i < list.size(); i++) {
+                        textArea.appendText(list.get(i) + "\n");
+                    }
+                    return;
+                }
+                for (String s : list) {
+                    textArea.appendText(s + "\n");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void addMessageToFile(String s) {
+        File file = new File(String.format("client/src/main/resources/history_%s.txt", nickname));
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(file, true))) {
+            bufferedWriter.write(s + "\n");
         } catch (IOException e) {
             e.printStackTrace();
         }
