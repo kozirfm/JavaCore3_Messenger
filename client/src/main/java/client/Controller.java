@@ -2,7 +2,6 @@ package client;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 
 import javafx.fxml.FXMLLoader;
@@ -79,15 +78,12 @@ public class Controller implements Initializable {
         authenticated = false;
         Platform.runLater(() -> {
             Stage stage = (Stage) textField.getScene().getWindow();
-            stage.setOnCloseRequest(new EventHandler<WindowEvent>() {
-                @Override
-                public void handle(WindowEvent windowEvent) {
-                    if (socket != null && !socket.isClosed()) {
-                        try {
-                            out.writeUTF("/end");
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+            stage.setOnCloseRequest(windowEvent -> {
+                if (socket != null && !socket.isClosed()) {
+                    try {
+                        out.writeUTF("/end");
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
             });
@@ -122,6 +118,10 @@ public class Controller implements Initializable {
                             if (str.equals("/end")) {
                                 setAuthenticated(false);
                                 break;
+                            }
+                            if (str.startsWith("/cnick ")) {
+                                String[] token = str.split(" ");
+                                setTitle("Messenger : " + token[1]);
                             }
                             if (str.startsWith("/clientlist ")) {
                                 String[] token = str.split(" ");
@@ -192,13 +192,11 @@ public class Controller implements Initializable {
     }
 
     void setTitle(String title) {
-        Platform.runLater(() -> {
-            ((Stage) textField.getScene().getWindow()).setTitle(title);
-        });
+        Platform.runLater(() -> ((Stage) textField.getScene().getWindow()).setTitle(title));
     }
 
     public void clickClientList(MouseEvent mouseEvent) {
-        String receiver = clientList.getSelectionModel().getSelectedItem().toString();
+        String receiver = clientList.getSelectionModel().getSelectedItem();
         textField.setText("/w " + receiver + " ");
     }
 
@@ -224,6 +222,10 @@ public class Controller implements Initializable {
     }
 
     public void tryRegistration(String login, String password, String nickname) {
+        if (login.equals("") || password.equals("") || nickname.equals("")) {
+            textArea.setText("Форма регистрации не заполнена");
+            return;
+        }
         String msg = String.format("/reg %s %s %s", login, password, nickname);
 
         if (socket == null || socket.isClosed()) {

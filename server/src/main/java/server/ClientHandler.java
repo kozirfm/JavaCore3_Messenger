@@ -45,7 +45,7 @@ public class ClientHandler {
                             }
                         }
                         if (str.equals("/end")) {
-                            throw new RuntimeException("Закрыли крестиком");
+                            throw new RuntimeException();
                         }
                         if (str.startsWith("/auth ")) {
                             String[] token = str.split(" ");
@@ -78,6 +78,21 @@ public class ClientHandler {
                             if (str.equals("/end")) {
                                 out.writeUTF("/end");
                                 break;
+                            }
+                            if (str.startsWith("/cnick")) {
+                                String[] token = str.split(" ");
+                                if (token.length == 2) {
+                                    if (DataBaseQuery.changeNickname(nick, token[1])) {
+                                        sendMessage("Никнейм " + nick + " успешно изменен на " + token[1]);
+                                        nick = token[1];
+                                        server.broadcastClientList();
+                                        out.writeUTF(str);
+                                    } else {
+                                        sendMessage("Никнейм " + token[1] + " занят");
+                                    }
+                                } else {
+                                    sendMessage("Новый никнейм введен неккоректно");
+                                }
                             }
                             if (str.startsWith("/w")) {
                                 String[] token = str.split(" ", 3);

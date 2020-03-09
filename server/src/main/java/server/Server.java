@@ -17,7 +17,7 @@ public class Server {
 
     public Server() {
         clients = new Vector<>();
-        authService = new SimpleAuthService();
+        authService = new DBAuthService();
         ServerSocket server = null;
         Socket socket = null;
 
