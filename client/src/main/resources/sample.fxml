@@ -22,7 +22,7 @@
 
     <HBox fx:id="msgPanel" visible="false" managed="false">
         <TextField fx:id="textField" HBox.hgrow="ALWAYS" promptText="Введите сообщение" onAction="#sendMessage" onKeyPressed="#pressEnter"/>
-        <Button text="Отправить" onAction="#sendMessage" onKeyPressed="#pressEnter" minWidth="100"/>
+        <Button text="Отправить" onAction="#sendMessage" minWidth="100"/>
     </HBox>
 </VBox>
 

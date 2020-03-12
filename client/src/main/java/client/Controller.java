@@ -18,14 +18,12 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
-
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class Controller implements Initializable {
@@ -95,7 +93,6 @@ public class Controller implements Initializable {
             socket = new Socket(IP_ADDRESS, PORT);
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
-
             new Thread(() -> {
                 try {
                     //цикл аутентификации
@@ -104,11 +101,12 @@ public class Controller implements Initializable {
                         if (str.startsWith("/authok ")) {
                             setAuthenticated(true);
                             nickname = str.split(" ")[1];
+                            MessageHistory.fileConnect(nickname);
+                            MessageHistory.loadMessageHistory(this);
                             break;
                         }
                         textArea.appendText(str + "\n");
                     }
-
                     setTitle("Messenger : " + nickname);
 
                     //цикл работы
@@ -134,6 +132,7 @@ public class Controller implements Initializable {
                             }
                         } else {
                             textArea.appendText(str + "\n");
+                            MessageHistory.addMessageToFile(str);
                         }
                     }
                 } catch (SocketException e) {
@@ -143,12 +142,16 @@ public class Controller implements Initializable {
                     e.getStackTrace();
                 } finally {
                     try {
+                        MessageHistory.fileDisconnect();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    try {
                         socket.close();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
-
             }).start();
 
         } catch (IOException e) {

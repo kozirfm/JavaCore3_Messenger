@@ -14,8 +14,8 @@
     <Label text="Пароль"/>
     <PasswordField fx:id="passwordField" minWidth="180"/>
     <Label text="Никнэйм"/>
-    <TextField fx:id="nicknameField" minWidth="180"/>
-    <Button text="Зарегистрироваться" onAction="#clickRegistration"/>
+    <TextField fx:id="nicknameField" minWidth="180" onKeyPressed="#pressEnter"/>
+    <Button text="Зарегистрироваться" onAction="#clickRegistration" onKeyPressed="#pressEnter"/>
 
 </VBox>
 
