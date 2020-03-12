@@ -28,111 +28,104 @@ public class ClientHandler {
             this.server = server;
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
-
-            new Thread(() -> {
-                try {
-                    socket.setSoTimeout(120000);
-                    //цикл аутентификации
-                    while (true) {
-                        String str = in.readUTF();
-                        if (str.startsWith("/reg ")) {
-                            String[] token = str.split(" ");
-                            boolean b = server.getAuthService().registration(token[1], token[2], token[3]);
-                            if (b) {
-                                sendMessage("Вы успешно зарегистрированы");
-                            } else {
-                                sendMessage("Регистрация не удалась");
-                            }
-                        }
-                        if (str.equals("/end")) {
-                            throw new RuntimeException();
-                        }
-                        if (str.startsWith("/auth ")) {
-                            String[] token = str.split(" ");
-                            if (token.length < 3) {
-                                continue;
-                            }
-                            String newNick = server.getAuthService().getNicknameByLoginAndPassword(token[1], token[2]);
-                            if (newNick != null) {
-                                login = token[1];
-                                if (!server.isLoginAuthorized(login)) {
-                                    sendMessage("/authok " + newNick);
-                                    nick = newNick;
-                                    server.subscribe(this);
-                                    System.out.println("Клиент " + nick + " подключился");
-                                    socket.setSoTimeout(0);
-                                    break;
-                                } else {
-                                    sendMessage("С этим логином уже авторизовались");
-                                }
-                            } else {
-                                sendMessage("Неверный логин / пароль");
-                            }
-                        }
+            socket.setSoTimeout(120000);
+            //цикл аутентификации
+            while (true) {
+                String str = in.readUTF();
+                if (str.startsWith("/reg ")) {
+                    String[] token = str.split(" ");
+                    boolean b = server.getAuthService().registration(token[1], token[2], token[3]);
+                    if (b) {
+                        sendMessage("Вы успешно зарегистрированы");
+                    } else {
+                        sendMessage("Регистрация не удалась");
                     }
+                }
+                if (str.equals("/end")) {
+                    throw new RuntimeException();
+                }
+                if (str.startsWith("/auth ")) {
+                    String[] token = str.split(" ");
+                    if (token.length < 3) {
+                        continue;
+                    }
+                    String newNick = server.getAuthService().getNicknameByLoginAndPassword(token[1], token[2]);
+                    if (newNick != null) {
+                        login = token[1];
+                        if (!server.isLoginAuthorized(login)) {
+                            sendMessage("/authok " + newNick);
+                            nick = newNick;
+                            server.subscribe(this);
+                            System.out.println("Клиент " + nick + " подключился");
+                            socket.setSoTimeout(0);
+                            break;
+                        } else {
+                            sendMessage("С этим логином уже авторизовались");
+                        }
+                    } else {
+                        sendMessage("Неверный логин / пароль");
+                    }
+                }
+            }
 
-                    //цикл работы
-                    while (true) {
-                        String str = in.readUTF();
-                        if (str.startsWith("/")) {
-                            if (str.equals("/end")) {
-                                out.writeUTF("/end");
-                                break;
-                            }
-                            if (str.startsWith("/cnick")) {
-                                String[] token = str.split(" ");
-                                if (token.length == 2) {
-                                    if (DataBaseQuery.changeNickname(nick, token[1])) {
-                                        sendMessage("Никнейм " + nick + " успешно изменен на " + token[1]);
-                                        nick = token[1];
-                                        server.broadcastClientList();
-                                        out.writeUTF(str);
-                                    } else {
-                                        sendMessage("Никнейм " + token[1] + " занят");
-                                    }
-                                } else {
-                                    sendMessage("Новый никнейм введен неккоректно");
-                                }
-                            }
-                            if (str.startsWith("/w")) {
-                                String[] token = str.split(" ", 3);
-                                if (token.length == 3) {
-                                    server.privateMessage(this, token[1], token[2]);
-                                }
+            //цикл работы
+            while (true) {
+                String str = in.readUTF();
+                if (str.startsWith("/")) {
+                    if (str.equals("/end")) {
+                        out.writeUTF("/end");
+                        break;
+                    }
+                    if (str.startsWith("/cnick")) {
+                        String[] token = str.split(" ");
+                        if (token.length == 2) {
+                            if (DataBaseQuery.changeNickname(nick, token[1])) {
+                                sendMessage("Никнейм " + nick + " успешно изменен на " + token[1]);
+                                nick = token[1];
+                                server.broadcastClientList();
+                                out.writeUTF(str);
+                            } else {
+                                sendMessage("Никнейм " + token[1] + " занят");
                             }
                         } else {
-                            server.broadcastMessage(str, nick);
+                            sendMessage("Новый никнейм введен неккоректно");
                         }
                     }
-                } catch (SocketTimeoutException e) {
-                    System.out.println("Время ожидания истекло");
-                } catch (RuntimeException e) {
-                    System.out.println("Закрыли крестиком");
-                } catch (IOException e) {
-                    e.getStackTrace();
-                } finally {
-                    server.unsubscribe(this);
-                    System.out.println("Клиент " + nick + " отключился");
-                    try {
-                        in.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    if (str.startsWith("/w")) {
+                        String[] token = str.split(" ", 3);
+                        if (token.length == 3) {
+                            server.privateMessage(this, token[1], token[2]);
+                        }
                     }
-                    try {
-                        out.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    try {
-                        socket.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
+                } else {
+                    server.broadcastMessage(str, nick);
                 }
-            }).start();
+            }
+        } catch (SocketTimeoutException e) {
+            System.out.println("Время ожидания истекло");
+        } catch (RuntimeException e) {
+            System.out.println("Закрыли крестиком");
         } catch (IOException e) {
-            e.printStackTrace();
+            e.getStackTrace();
+        } finally {
+            server.unsubscribe(this);
+            System.out.println("Клиент " + nick + " отключился");
+            try {
+                in.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                out.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
         }
     }
 
