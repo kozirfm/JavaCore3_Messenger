@@ -93,7 +93,6 @@ public class Controller implements Initializable {
             socket = new Socket(IP_ADDRESS, PORT);
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
-
             new Thread(() -> {
                 try {
                     //цикл аутентификации
@@ -102,12 +101,12 @@ public class Controller implements Initializable {
                         if (str.startsWith("/authok ")) {
                             setAuthenticated(true);
                             nickname = str.split(" ")[1];
-                            loadMessageHistory();
+                            MessageHistory.fileConnect(nickname);
+                            MessageHistory.loadMessageHistory(this);
                             break;
                         }
                         textArea.appendText(str + "\n");
                     }
-
                     setTitle("Messenger : " + nickname);
 
                     //цикл работы
@@ -133,7 +132,7 @@ public class Controller implements Initializable {
                             }
                         } else {
                             textArea.appendText(str + "\n");
-                            addMessageToFile(str);
+                            MessageHistory.addMessageToFile(str);
                         }
                     }
                 } catch (SocketException e) {
@@ -143,12 +142,16 @@ public class Controller implements Initializable {
                     e.getStackTrace();
                 } finally {
                     try {
+                        MessageHistory.fileDisconnect();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    try {
                         socket.close();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
-
             }).start();
 
         } catch (IOException e) {
@@ -233,42 +236,6 @@ public class Controller implements Initializable {
         }
         try {
             out.writeUTF(msg);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void loadMessageHistory() throws IOException {
-        File file = new File(String.format("client/src/main/resources/history_%s.txt", nickname));
-        List<String> list = new ArrayList<>();
-        if (!file.exists()) {
-            FileWriter fileWriter = new FileWriter(file);
-            fileWriter.close();
-        } else {
-            try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
-                String line;
-                while ((line = bufferedReader.readLine()) != null) {
-                    list.add(line);
-                }
-                if (list.size() >= 100) {
-                    for (int i = list.size() - 100; i < list.size(); i++) {
-                        textArea.appendText(list.get(i) + "\n");
-                    }
-                    return;
-                }
-                for (String s : list) {
-                    textArea.appendText(s + "\n");
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public void addMessageToFile(String s) {
-        File file = new File(String.format("client/src/main/resources/history_%s.txt", nickname));
-        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(file, true))) {
-            bufferedWriter.write(s + "\n");
         } catch (IOException e) {
             e.printStackTrace();
         }
