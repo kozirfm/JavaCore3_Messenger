@@ -6,10 +6,13 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Vector;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Server {
     private Vector<ClientHandler> clients;
     private AuthService authService;
+    private Socket socket;
 
     public AuthService getAuthService() {
         return authService;
@@ -19,26 +22,26 @@ public class Server {
         clients = new Vector<>();
         authService = new DBAuthService();
         ServerSocket server = null;
-        Socket socket = null;
 
         final int PORT = 5050;
 
         DataInputStream in;
         DataOutputStream out;
 
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        //2 потока установлено исключительно для проверки работоспособности;
         try {
             server = new ServerSocket(PORT);
             System.out.println("Сервер запущен");
 
             while (true) {
                 socket = server.accept();
-                new ClientHandler(socket, this);
-
+                executorService.execute(() -> new ClientHandler(socket, this));
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
+            executorService.shutdown();
             try {
                 if (socket != null) {
                     socket.close();
@@ -68,7 +71,7 @@ public class Server {
         for (ClientHandler c : clients) {
             if (c.getNick().equals(receiver)) {
                 c.sendMessage(message);
-                if (!c.getNick().equals(sender.getNick())){
+                if (!c.getNick().equals(sender.getNick())) {
                     sender.sendMessage(message);
                 }
                 return;
