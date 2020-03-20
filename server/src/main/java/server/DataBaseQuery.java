@@ -1,30 +1,34 @@
 package server;
 
 import java.sql.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class DataBaseQuery {
     private static Connection connection;
     private static Statement statement;
     private static final String dbPath = "jdbc:sqlite:server/src/main/resources/main.db";
+    private static final Logger logger = Logger.getLogger(DataBaseQuery.class.getName());
 
     private static void connectDb() throws ClassNotFoundException, SQLException {
+        logger.setLevel(Level.ALL);
         Class.forName("org.sqlite.JDBC");
         connection = DriverManager.getConnection(dbPath);
         statement = connection.createStatement();
-        System.out.println("База данных подключена");
+        logger.log(Level.INFO, "База данных подключена");
     }
 
     private static void disconnectDb() {
         try {
             statement.close();
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, e.getMessage(), e);
         }
         try {
             connection.close();
-            System.out.println("База данных отключена");
+            logger.log(Level.INFO, "База данных отключена");
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, e.getMessage(), e);
         }
     }
 
@@ -39,7 +43,7 @@ public class DataBaseQuery {
             preparedStatement.close();
             return result == 1;
         } catch (SQLException | ClassNotFoundException e) {
-            System.out.println("Пользователь с такими данными уже существует");
+            logger.log(Level.SEVERE, "Пользователь с такими данными уже существует", e);
         } finally {
             disconnectDb();
         }
@@ -57,7 +61,7 @@ public class DataBaseQuery {
             preparedStatement.close();
             return result;
         } catch (SQLException | ClassNotFoundException e) {
-            System.out.println("Неверный логин / пароль");
+            logger.log(Level.SEVERE, "Неверный логин / пароль", e);
         } finally {
             disconnectDb();
         }
@@ -74,7 +78,7 @@ public class DataBaseQuery {
             preparedStatement.close();
             return result == 1;
         } catch (SQLException | ClassNotFoundException e) {
-            System.out.println("Никнейм занят");
+            logger.log(Level.SEVERE, "Никнейм занят", e);
         } finally {
             disconnectDb();
         }

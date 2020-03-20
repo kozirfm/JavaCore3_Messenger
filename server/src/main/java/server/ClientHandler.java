@@ -5,6 +5,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ClientHandler {
     Socket socket = null;
@@ -13,6 +15,7 @@ public class ClientHandler {
     Server server;
     private String nick;
     private String login;
+    private static final Logger logger = Logger.getLogger(ClientHandler.class.getName());
 
     public String getNick() {
         return nick;
@@ -56,7 +59,7 @@ public class ClientHandler {
                             sendMessage("/authok " + newNick);
                             nick = newNick;
                             server.subscribe(this);
-                            System.out.println("Клиент " + nick + " подключился");
+                            logger.log(Level.INFO, "Клиент " + nick + " подключился");
                             socket.setSoTimeout(0);
                             break;
                         } else {
@@ -102,29 +105,26 @@ public class ClientHandler {
                 }
             }
         } catch (SocketTimeoutException e) {
-            System.out.println("Время ожидания истекло");
+            logger.log(Level.SEVERE, e.getMessage(), e);
         } catch (RuntimeException e) {
-            System.out.println("Закрыли крестиком");
+            logger.log(Level.SEVERE, e.getMessage(), e);
         } catch (IOException e) {
-            e.getStackTrace();
+            logger.log(Level.SEVERE, e.getMessage(), e);
         } finally {
             server.unsubscribe(this);
-            System.out.println("Клиент " + nick + " отключился");
+            logger.log(Level.INFO, "Клиент " + nick + " отключился");
             try {
                 in.close();
             } catch (IOException e) {
-                e.printStackTrace();
-            }
+                logger.log(Level.SEVERE, e.getMessage(), e);            }
             try {
                 out.close();
             } catch (IOException e) {
-                e.printStackTrace();
-            }
+                logger.log(Level.SEVERE, e.getMessage(), e);            }
             try {
                 socket.close();
             } catch (IOException e) {
-                e.printStackTrace();
-            }
+                logger.log(Level.SEVERE, e.getMessage(), e);            }
 
         }
     }
@@ -133,7 +133,6 @@ public class ClientHandler {
         try {
             out.writeUTF(msg);
         } catch (IOException e) {
-            e.printStackTrace();
-        }
+            logger.log(Level.SEVERE, e.getMessage(), e);        }
     }
 }

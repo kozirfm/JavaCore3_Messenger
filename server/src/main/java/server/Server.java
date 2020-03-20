@@ -8,11 +8,14 @@ import java.net.Socket;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Server {
     private Vector<ClientHandler> clients;
     private AuthService authService;
     private Socket socket;
+    private static final Logger logger = Logger.getLogger(Server.class.getName());
 
     public AuthService getAuthService() {
         return authService;
@@ -32,14 +35,13 @@ public class Server {
         //2 потока установлено исключительно для проверки работоспособности;
         try {
             server = new ServerSocket(PORT);
-            System.out.println("Сервер запущен");
-
+            logger.log(Level.INFO, "Сервер запущен");
             while (true) {
                 socket = server.accept();
                 executorService.execute(() -> new ClientHandler(socket, this));
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, e.getMessage(), e);
         } finally {
             executorService.shutdown();
             try {
@@ -47,14 +49,14 @@ public class Server {
                     socket.close();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.log(Level.SEVERE, e.getMessage(), e);
             }
             try {
                 if (server != null) {
                     server.close();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.log(Level.SEVERE, e.getMessage(), e);
             }
         }
 
